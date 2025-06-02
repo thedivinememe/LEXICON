@@ -1,0 +1,6 @@
+@echo off
+echo Preparing LEXICON visualizations for GitHub Pages...
+python %~dp0\prepare_github_pages.py
+echo.
+echo Press any key to exit...
+pause > nul
