@@ -30,6 +30,10 @@ class XShapedHoleEngine:
             "medium": 0.6,
             "low": 0.4
         }
+        
+        # Boundary calculation parameters
+        self.boundary_threshold = 0.65  # Threshold for inclusion in boundary
+        self.boundary_smoothing = 0.15  # Smoothing factor for boundary calculation
     
     def define_through_negation(self, concept: str, user_negations: List[str]) -> XShapedHoleDefinition:
         """
@@ -103,6 +107,127 @@ class XShapedHoleEngine:
             confidence=confidence,
             semantic_distance=semantic_distances
         )
+    
+    def calculate_boundary(self, concept: str, negations: List[str]) -> Dict[str, Any]:
+        """
+        Calculate concept boundary from negations.
+        
+        This method determines the semantic boundary of a concept based on its negations.
+        The boundary is represented as a set of points in semantic space that separate
+        the concept from its negations.
+        
+        Args:
+            concept: The concept to calculate boundary for
+            negations: List of concepts that define the not-space
+        
+        Returns:
+            Dictionary containing boundary information:
+            - boundary_points: List of semantic points defining the boundary
+            - boundary_strength: How well-defined the boundary is (0.0-1.0)
+            - inclusion_probability: Function to calculate probability of a concept
+                                    being inside the boundary
+        """
+        # Normalize inputs
+        concept = self._normalize_concept(concept)
+        normalized_negations = [self._normalize_concept(neg) for neg in negations]
+        not_space = set(neg for neg in normalized_negations if neg)
+        
+        # Calculate semantic distances
+        distances = {}
+        for neg in not_space:
+            distances[neg] = self._calculate_semantic_distance(concept, neg)
+        
+        # Calculate average distance (center of the hole)
+        avg_distance = sum(distances.values()) / max(1, len(distances))
+        
+        # Calculate boundary strength based on:
+        # 1. Number of negations (more = stronger boundary)
+        # 2. Average distance (higher = stronger boundary)
+        # 3. Consistency of distances (lower variance = stronger boundary)
+        
+        # Size factor
+        size_factor = min(1.0, len(not_space) / 10)  # Max out at 10 negations
+        
+        # Distance factor
+        distance_factor = avg_distance
+        
+        # Consistency factor (inverse of normalized standard deviation)
+        if len(distances) > 1:
+            variance = sum((d - avg_distance) ** 2 for d in distances.values()) / len(distances)
+            std_dev = variance ** 0.5
+            normalized_std_dev = std_dev / max(0.01, avg_distance)  # Avoid division by zero
+            consistency_factor = 1.0 - min(1.0, normalized_std_dev)
+        else:
+            consistency_factor = 0.5  # Default for single negation
+        
+        # Calculate boundary strength
+        boundary_strength = (
+            0.4 * size_factor +
+            0.4 * distance_factor +
+            0.2 * consistency_factor
+        )
+        
+        # Clamp to reasonable range
+        boundary_strength = max(0.1, min(0.95, boundary_strength))
+        
+        # Create boundary points (simplified representation)
+        # In a real implementation, this would use actual vector representations
+        boundary_points = []
+        for neg in not_space:
+            # Calculate point on boundary between concept and negation
+            distance = distances[neg]
+            boundary_position = self.boundary_threshold
+            
+            # Add some variance based on distance
+            boundary_position += (distance - 0.5) * self.boundary_smoothing
+            
+            # Clamp to valid range
+            boundary_position = max(0.1, min(0.9, boundary_position))
+            
+            # Add boundary point
+            boundary_points.append({
+                "negation": neg,
+                "distance": distance,
+                "boundary_position": boundary_position
+            })
+        
+        # Create inclusion probability function
+        def inclusion_probability(test_concept: str) -> float:
+            """Calculate probability that test_concept is inside the boundary"""
+            test_concept = self._normalize_concept(test_concept)
+            
+            # Calculate distance to concept
+            concept_distance = self._calculate_semantic_distance(concept, test_concept)
+            
+            # Calculate distances to negations
+            negation_distances = [
+                self._calculate_semantic_distance(test_concept, neg)
+                for neg in not_space
+            ]
+            
+            # If closer to concept than any negation, high probability
+            if concept_distance < min(negation_distances, default=1.0):
+                base_prob = 0.9
+            else:
+                # Calculate based on relative distances
+                avg_neg_distance = sum(negation_distances) / max(1, len(negation_distances))
+                relative_position = avg_neg_distance / (concept_distance + avg_neg_distance)
+                base_prob = relative_position
+            
+            # Adjust by boundary strength
+            adjusted_prob = base_prob * boundary_strength
+            
+            # Clamp to valid probability
+            return max(0.0, min(1.0, adjusted_prob))
+        
+        return {
+            "concept": concept,
+            "boundary_points": boundary_points,
+            "boundary_strength": boundary_strength,
+            "inclusion_probability": inclusion_probability,
+            "average_distance": avg_distance,
+            "not_space_size": len(not_space)
+        }
     
     def refine_not_space(self, definition: XShapedHoleDefinition) -> XShapedHoleDefinition:
         """

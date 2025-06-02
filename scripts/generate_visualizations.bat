@@ -1,0 +1,6 @@
+@echo off
+echo Running LEXICON Visualization Generator...
+python %~dp0\generate_visualizations.py
+echo.
+echo Press any key to exit...
+pause > nul
