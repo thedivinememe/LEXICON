@@ -2,8 +2,12 @@ import torch
 import torch.nn as nn
 from transformers import AutoModel, AutoTokenizer
 import numpy as np
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Optional, Tuple, Union
+import asyncio
+from dataclasses import dataclass, field
+
 from src.core.types import VectorizedObject, ConceptDefinition, ExistencePattern
+from src.core.existence_primitives import PrimitiveDefinition, ExistenceRelationship, LogicalConnector
 
 class VectorizedObjectGenerator(nn.Module):
     """Neural network for generating vectorized objects from concepts"""
@@ -69,15 +73,32 @@ class VectorizedObjectGenerator(nn.Module):
     
     def encode_pattern(self, pattern: ExistencePattern) -> torch.Tensor:
         """Encode existence pattern into vector"""
+        # Handle Exists objects from primitives module
+        if hasattr(pattern, 'symbol'):
+            # This is an ExistencePrimitive object
+            return self.primitive_embeddings[pattern.symbol].to(self.device)
+        
+        if len(pattern.pattern) == 0:
+            # Empty pattern, return zero vector
+            return torch.zeros(768).to(self.device)
+            
         if isinstance(pattern.pattern[0], str):
             # Simple primitive
             return self.primitive_embeddings[pattern.pattern[0]].to(self.device)
+        
+        # Handle ExistencePrimitive objects
+        if hasattr(pattern.pattern[0], 'symbol'):
+            # This is an ExistencePrimitive object
+            return self.primitive_embeddings[pattern.pattern[0].symbol].to(self.device)
         
         # Complex pattern - recursive encoding
         vectors = []
         for element in pattern.pattern:
             if isinstance(element, str):
                 vectors.append(self.primitive_embeddings[element])
+            elif hasattr(element, 'symbol'):
+                # This is an ExistencePrimitive object
+                vectors.append(self.primitive_embeddings[element.symbol])
             else:
                 vectors.append(self.encode_pattern(element))
         
@@ -198,3 +219,178 @@ class VectorizedObjectGenerator(nn.Module):
         
         not_encoding = self.encoder(**not_tokens).last_hidden_state
         return not_encoding.mean(dim=[0, 1])
+
+
+class RelationshipAwareVectorizer:
+    """
+    Vectorizer that is aware of logical relationships between concepts.
+    Used by the SphericalRelationshipVectorizer to generate base vectors.
+    """
+    
+    def __init__(self, model_name: str = "bert-base-uncased", device: str = "cuda"):
+        """
+        Initialize the relationship-aware vectorizer
+        
+        Args:
+            model_name: Name of the pre-trained model
+            device: Device to use (cuda or cpu)
+        """
+        self.device = torch.device(device if torch.cuda.is_available() else "cpu")
+        
+        # Pre-trained language model
+        self.encoder = AutoModel.from_pretrained(model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        
+        # Move to device
+        self.encoder.to(self.device)
+        
+        # Dimension of vectors
+        self.dimension = 768
+    
+    async def generate_relationship_aware_vector(self, primitive_def: PrimitiveDefinition) -> np.ndarray:
+        """
+        Generate a vector that is aware of relationships
+        
+        Args:
+            primitive_def: PrimitiveDefinition
+            
+        Returns:
+            Vector
+        """
+        # Encode concept
+        concept_vector = await self._encode_concept(primitive_def.concept)
+        
+        # Encode not space
+        not_space = primitive_def.properties.get("not_space", [])
+        not_space_vector = await self._encode_not_space(not_space)
+        
+        # Encode relationships
+        and_vector = await self._encode_relationships(primitive_def.and_relationships)
+        or_vector = await self._encode_relationships(primitive_def.or_relationships)
+        not_vector = await self._encode_relationships(primitive_def.not_relationships)
+        
+        # Combine vectors
+        combined_vector = concept_vector * 0.4 + not_space_vector * 0.2 + and_vector * 0.2 + or_vector * 0.1 + not_vector * 0.1
+        
+        # Normalize
+        combined_vector = combined_vector / np.linalg.norm(combined_vector)
+        
+        return combined_vector
+    
+    async def _encode_concept(self, concept: str) -> np.ndarray:
+        """
+        Encode a concept
+        
+        Args:
+            concept: Concept name
+            
+        Returns:
+            Vector
+        """
+        # Tokenize
+        tokens = self.tokenizer(
+            concept,
+            return_tensors="pt",
+            padding=True,
+            truncation=True
+        ).to(self.device)
+        
+        # Encode
+        with torch.no_grad():
+            output = self.encoder(**tokens)
+        
+        # Get vector
+        vector = output.last_hidden_state.mean(dim=1).squeeze().cpu().numpy()
+        
+        return vector
+    
+    async def _encode_not_space(self, not_space: List[str]) -> np.ndarray:
+        """
+        Encode not space
+        
+        Args:
+            not_space: List of concepts in not space
+            
+        Returns:
+            Vector
+        """
+        if not not_space:
+            return np.zeros(self.dimension)
+        
+        # Tokenize
+        tokens = self.tokenizer(
+            not_space,
+            return_tensors="pt",
+            padding=True,
+            truncation=True
+        ).to(self.device)
+        
+        # Encode
+        with torch.no_grad():
+            output = self.encoder(**tokens)
+        
+        # Get vector
+        vector = output.last_hidden_state.mean(dim=[0, 1]).cpu().numpy()
+        
+        return vector
+    
+    async def _encode_relationships(self, relationships: List[ExistenceRelationship]) -> np.ndarray:
+        """
+        Encode relationships
+        
+        Args:
+            relationships: List of ExistenceRelationship
+            
+        Returns:
+            Vector
+        """
+        if not relationships:
+            return np.zeros(self.dimension)
+        
+        # Get concepts
+        concepts = [rel.concept for rel in relationships]
+        
+        # Tokenize
+        tokens = self.tokenizer(
+            concepts,
+            return_tensors="pt",
+            padding=True,
+            truncation=True
+        ).to(self.device)
+        
+        # Encode
+        with torch.no_grad():
+            output = self.encoder(**tokens)
+        
+        # Get vectors
+        vectors = output.last_hidden_state.mean(dim=1).cpu().numpy()
+        
+        # Weight by strength
+        weighted_vectors = np.zeros_like(vectors[0])
+        
+        for i, rel in enumerate(relationships):
+            weighted_vectors += vectors[i] * rel.strength
+        
+        # Normalize
+        if np.linalg.norm(weighted_vectors) > 0:
+            weighted_vectors = weighted_vectors / np.linalg.norm(weighted_vectors)
+        
+        return weighted_vectors
+    
+    async def generate_vector_batch(self, primitive_defs: List[PrimitiveDefinition]) -> Dict[str, np.ndarray]:
+        """
+        Generate vectors for multiple concepts
+        
+        Args:
+            primitive_defs: List of PrimitiveDefinition
+            
+        Returns:
+            Dictionary of concept names to vectors
+        """
+        results = {}
+        
+        for primitive_def in primitive_defs:
+            vector = await self.generate_relationship_aware_vector(primitive_def)
+            results[primitive_def.concept] = vector
+        
+        return results

@@ -30,7 +30,8 @@ class FAISSStore:
         else:
             # Create a new index
             # Use IndexIDMap to support explicit IDs
-            base_index = faiss.IndexFlatL2(dimension)
+            # Use IndexFlatIP for cosine similarity (inner product)
+            base_index = faiss.IndexFlatIP(dimension)
             self.index = faiss.IndexIDMap(base_index)
     
     def add_vectors(self, vectors: List[np.ndarray], ids: List[str]) -> None:
@@ -44,7 +45,7 @@ class FAISSStore:
         if len(vectors) != len(ids):
             raise ValueError("Number of vectors and IDs must match")
         
-        if not vectors:
+        if len(vectors) == 0:
             return
         
         # Convert to numpy array if needed
@@ -87,92 +88,147 @@ class FAISSStore:
         Returns:
             Tuple of (distances, indices)
         """
-        if self.index.ntotal == 0:
-            return np.array([]), np.array([])
-        
-        # Convert to numpy array if needed
-        if isinstance(query_vector, list):
-            query_vector = np.array(query_vector, dtype=np.float32)
-        
-        # Ensure query is 2D
-        if query_vector.ndim == 1:
-            query_vector = query_vector.reshape(1, -1)
-        
-        # Normalize for cosine similarity
-        faiss.normalize_L2(query_vector)
-        
-        # Perform search
-        distances, indices = self.index.search(query_vector, min(k, self.index.ntotal))
-        
-        return distances, indices
+        try:
+            if self.index is None or self.index.ntotal == 0:
+                # Return empty arrays if index is empty
+                return np.array([[0.0] * min(k, 1)]), np.array([[-1] * min(k, 1)])
+            
+            # Convert to numpy array if needed
+            if isinstance(query_vector, list):
+                query_vector = np.array(query_vector, dtype=np.float32)
+            
+            # Ensure query is 2D
+            if query_vector.ndim == 1:
+                query_vector = query_vector.reshape(1, -1)
+            
+            # Ensure query has the correct dimension
+            if query_vector.shape[1] != self.dimension:
+                raise ValueError(f"Query vector dimension ({query_vector.shape[1]}) does not match index dimension ({self.dimension})")
+            
+            # Normalize for cosine similarity
+            faiss.normalize_L2(query_vector)
+            
+            # Determine number of results to return
+            actual_k = min(k, self.index.ntotal)
+            if actual_k <= 0:
+                return np.array([[0.0]]), np.array([[-1]])
+            
+            # Perform search
+            distances, indices = self.index.search(query_vector, actual_k)
+            
+            return distances, indices
+        except Exception as e:
+            # Log the error and return empty results
+            print(f"Error in search: {e}")
+            return np.array([[0.0] * min(k, 1)]), np.array([[-1] * min(k, 1)])
     
     def get_id(self, index: int) -> Optional[str]:
         """Get the string ID for a FAISS internal index"""
-        return self.id_map.get(int(index))
+        try:
+            return self.id_map.get(int(index))
+        except Exception as e:
+            print(f"Error in get_id: {e}")
+            return None
     
     def get_vector(self, id_str: str) -> Optional[np.ndarray]:
         """Get a vector by its string ID"""
-        # Find the internal ID
-        internal_id = None
-        for idx, id_s in self.id_map.items():
-            if id_s == id_str:
-                internal_id = idx
-                break
-        
-        if internal_id is None:
+        try:
+            # Find the internal ID
+            internal_id = None
+            for idx, id_s in self.id_map.items():
+                if id_s == id_str:
+                    internal_id = idx
+                    break
+            
+            if internal_id is None:
+                return None
+            
+            # Reconstruct the vector if possible
+            if self.index is not None and hasattr(self.index, 'reconstruct'):
+                try:
+                    return self.index.reconstruct(internal_id)
+                except Exception as e:
+                    print(f"Error reconstructing vector: {e}")
+                    return None
+            
+            # If reconstruction is not supported, return None
             return None
-        
-        # Reconstruct the vector if possible
-        if hasattr(self.index, 'reconstruct'):
-            return self.index.reconstruct(internal_id)
-        
-        # If reconstruction is not supported, return None
-        return None
+        except Exception as e:
+            print(f"Error in get_vector: {e}")
+            return None
     
     def save(self) -> None:
         """Save the index to disk"""
-        if not self.index_path:
-            raise ValueError("No index path specified")
-        
-        # Create directory if it doesn't exist
-        os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
-        
-        # Save the index
-        faiss.write_index(self.index, self.index_path)
-        
-        # Save the ID mapping
-        id_map_path = f"{self.index_path}.ids"
-        with open(id_map_path, 'w') as f:
-            for internal_id, id_str in self.id_map.items():
-                f.write(f"{internal_id},{id_str}\n")
+        try:
+            if not self.index_path:
+                raise ValueError("No index path specified")
+            
+            if self.index is None:
+                raise ValueError("No index to save")
+            
+            # Create directory if it doesn't exist
+            os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
+            
+            # Save the index
+            faiss.write_index(self.index, self.index_path)
+            
+            # Save the ID mapping
+            id_map_path = f"{self.index_path}.ids"
+            with open(id_map_path, 'w') as f:
+                for internal_id, id_str in self.id_map.items():
+                    f.write(f"{internal_id},{id_str}\n")
+                    
+            print(f"Index saved to {self.index_path} with {len(self.id_map)} vectors")
+        except Exception as e:
+            print(f"Error saving index: {e}")
+            raise
     
     def load(self) -> None:
         """Load the index from disk"""
-        if not self.index_path or not os.path.exists(self.index_path):
-            raise ValueError("Index file not found")
-        
-        # Load the index
-        self.index = faiss.read_index(self.index_path)
-        
-        # Load the ID mapping
-        id_map_path = f"{self.index_path}.ids"
-        if os.path.exists(id_map_path):
-            self.id_map = {}
-            with open(id_map_path, 'r') as f:
-                for line in f:
-                    internal_id, id_str = line.strip().split(',', 1)
-                    self.id_map[int(internal_id)] = id_str
+        try:
+            if not self.index_path:
+                raise ValueError("No index path specified")
+                
+            if not os.path.exists(self.index_path):
+                raise ValueError(f"Index file not found: {self.index_path}")
             
-            # Update next_id
-            if self.id_map:
-                self.next_id = max(self.id_map.keys()) + 1
+            # Load the index
+            self.index = faiss.read_index(self.index_path)
+            
+            # Load the ID mapping
+            id_map_path = f"{self.index_path}.ids"
+            if os.path.exists(id_map_path):
+                self.id_map = {}
+                with open(id_map_path, 'r') as f:
+                    for line in f:
+                        try:
+                            internal_id, id_str = line.strip().split(',', 1)
+                            self.id_map[int(internal_id)] = id_str
+                        except ValueError:
+                            print(f"Warning: Invalid line in ID mapping file: {line}")
+                
+                # Update next_id
+                if self.id_map:
+                    self.next_id = max(self.id_map.keys()) + 1
+                else:
+                    self.next_id = 0
+                    
+            print(f"Index loaded from {self.index_path} with {len(self.id_map)} vectors")
+        except Exception as e:
+            print(f"Error loading index: {e}")
+            # Initialize a new index if loading fails
+            self.initialize()
     
-    def clear(self) -> None:
-        """Clear the index"""
-        base_index = faiss.IndexFlatL2(self.dimension)
+    def initialize(self) -> None:
+        """Initialize the index"""
+        base_index = faiss.IndexFlatIP(self.dimension)
         self.index = faiss.IndexIDMap(base_index)
         self.id_map = {}
         self.next_id = 0
+    
+    def clear(self) -> None:
+        """Clear the index"""
+        self.initialize()
     
     def __len__(self) -> int:
         """Get the number of vectors in the index"""

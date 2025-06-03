@@ -1,6 +1,6 @@
-# LEXICON: Memetic Atomic Dictionary with Vectorized Objects
+# LEXICON: Memetic Atomic Dictionary with Vectorized Objects and Spherical Universal Set
 
-LEXICON is a unified Python application that combines neural components for vectorized object generation with a comprehensive system for defining, storing, and manipulating concepts through negation.
+LEXICON is a unified Python application that combines neural components for vectorized object generation with a comprehensive system for defining, storing, and manipulating concepts through negation. The system now features a spherical universal set (Bloch sphere topology) where antipodal points represent perfect negations.
 
 ## Architecture Overview
 
@@ -56,6 +56,9 @@ A monolithic Python application combining all LEXICON functionality in a single,
 - **Multiple API Interfaces**: REST, GraphQL, and WebSocket endpoints
 - **Vector Visualization**: Dimensionality reduction for concept visualization
 - **GPU Acceleration**: Automatic GPU usage when available
+- **Spherical Universal Set**: Bloch sphere topology where antipodal points represent perfect negations
+- **Relative Type System**: Every concept is a bottom type with its negation as the top type
+- **Existence Type Hierarchy**: 11 levels from VOID to TRANSCENDENT
 
 ## Getting Started
 
@@ -65,6 +68,7 @@ A monolithic Python application combining all LEXICON functionality in a single,
 - PostgreSQL
 - Redis
 - CUDA-compatible GPU (optional, for faster processing)
+- Matplotlib and NumPy for visualizations
 
 ### Installation
 
@@ -90,9 +94,24 @@ A monolithic Python application combining all LEXICON functionality in a single,
 
 4. Access the API at `http://localhost:8000`
 
+### Visualizing the Spherical Universal Set
+
+To visualize the Bloch sphere with core concepts:
+
+```bash
+# On Windows
+scripts\run_spherical_visualization.bat
+
+# On Linux/macOS
+chmod +x scripts/run_spherical_visualization.sh
+./scripts/run_spherical_visualization.sh
+```
+
+For more details on the spherical system, see [SPHERICAL_SYSTEM.md](docs/SPHERICAL_SYSTEM.md).
+
 ## API Usage
 
-### REST API
+### REST API (Including Spherical Endpoints)
 
 ```python
 import requests
@@ -103,6 +122,17 @@ response = requests.post(
     json={
         "concept": "Tree",
         "negations": ["rock", "building", "animal"]
+    }
+)
+
+# Define a concept in spherical space
+response = requests.post(
+    "http://localhost:8000/api/v1/concepts/define-spherical",
+    json={
+        "concept": "Tree",
+        "negations": ["rock", "building", "animal"],
+        "growth_pattern": "radial",
+        "existence_type": "BIOLOGICAL"
     }
 )
 concept = response.json()
@@ -117,6 +147,30 @@ similar = requests.get(
 ### GraphQL
 
 ```graphql
+# Define a concept in spherical space
+mutation {
+  defineConceptSpherical(input: {
+    concept: "Tree",
+    negations: ["rock", "building", "animal"],
+    growthPattern: "radial",
+    existenceType: "BIOLOGICAL"
+  }) {
+    conceptId
+    conceptName
+    sphericalPosition {
+      r
+      theta
+      phi
+    }
+    nullDistance
+    antipodalNegation {
+      r
+      theta
+      phi
+    }
+  }
+}
+
 mutation {
   defineConcept(input: {
     concept: "Tree",
@@ -186,14 +240,22 @@ lexicon/
 │   │   ├── primitives.py       # Existence primitive definitions
 │   │   ├── reducer.py          # Pattern reduction engine
 │   │   ├── x_shaped_hole.py    # X-shaped hole implementation
-│   │   └── types.py            # Core type definitions
+│   │   ├── types.py            # Core type definitions
+│   │   ├── spherical_universe.py # Bloch sphere universe
+│   │   ├── null_gradient.py    # Null gradient manager
+│   │   ├── centroid_builder.py # Centroid concept builder
+│   │   ├── existence_types.py  # Existence type hierarchy
+│   │   ├── relative_type_system.py # Relative type system
+│   │   ├── empathy_memeplex.py # Empathy memeplex
+│   │   └── empathetic_golden_loop.py # Golden Loop processor
 │   │
 │   ├── neural/                 # Neural network components
 │   │   ├── __init__.py
 │   │   ├── models.py           # Neural architectures
 │   │   ├── vectorizer.py       # Vector generation
 │   │   ├── empathy.py          # Empathy normalization
-│   │   └── evolution.py        # Memetic evolution
+│   │   ├── evolution.py        # Memetic evolution
+│   │   └── spherical_vectorizer.py # Spherical relationship vectorizer
 │   │
 │   ├── storage/                # Data persistence
 │   │   ├── __init__.py
@@ -201,24 +263,41 @@ lexicon/
 │   │   ├── cache.py            # Redis caching
 │   │   ├── vector_store.py     # FAISS integration
 │   │   └── migrations/         # Database migrations
+│   │       ├── 001_initial.sql # Initial schema
+│   │       └── 003_spherical.sql # Spherical system schema
 │   │
 │   ├── api/                    # API endpoints
 │   │   ├── __init__.py
 │   │   ├── rest.py             # REST endpoints
 │   │   ├── graphql.py          # GraphQL schema
 │   │   ├── websocket.py        # Real-time updates
-│   │   └── dependencies.py     # Shared dependencies
+│   │   ├── dependencies.py     # Shared dependencies
+│   │   └── spherical_rest.py   # Spherical API endpoints
 │   │
-│   └── services/               # Business logic services
-│       ├── __init__.py
-│       ├── definition.py       # Concept definition service
-│       ├── normalization.py    # Normalization service
-│       ├── visualization.py    # Vector visualization
-│       └── export.py           # LLM export service
+│   ├── services/               # Business logic services
+│   │   ├── __init__.py
+│   │   ├── definition.py       # Concept definition service
+│   │   ├── normalization.py    # Normalization service
+│   │   ├── visualization.py    # Vector visualization
+│   │   ├── export.py           # LLM export service
+│   │   └── sphere_visualization.py # Spherical visualization
+│   │
+│   ├── data/                   # Data definitions
+│   │   └── core_definitions.py # Core concept definitions
+│   │
+│   └── examples/               # Example code
+│       └── spherical_integration_example.py # Spherical integration
 │
 ├── models/                     # Trained model checkpoints
 ├── tests/                      # Test suite
+│   └── test_spherical_system.py # Spherical system tests
 ├── scripts/                    # Utility scripts
+│   ├── run_spherical_visualization.py # Run visualization
+│   ├── run_spherical_visualization.bat # Windows script
+│   └── run_spherical_visualization.sh # Unix script
+├── docs/                       # Documentation
+│   └── SPHERICAL_SYSTEM.md     # Spherical system docs
+├── visualizations/             # Visualization outputs
 ├── docker/                     # Docker configuration
 ├── requirements.txt
 ├── setup.py

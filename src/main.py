@@ -5,7 +5,7 @@ import asyncio
 import uvicorn
 
 from src.config import settings
-from src.api import rest, graphql, websocket
+from src.api import rest, graphql, websocket, spherical_rest
 from src.api.websocket import websocket_handler
 from src.neural.vectorizer import VectorizedObjectGenerator
 from src.storage.database import Database
@@ -88,6 +88,7 @@ app.add_middleware(
 
 # Include routers
 app.include_router(rest.router, prefix=settings.api_prefix)
+app.include_router(spherical_rest.router, prefix=settings.api_prefix)
 app.mount("/graphql", graphql.graphql_app)
 
 # WebSocket endpoint
@@ -106,7 +107,8 @@ async def health_check():
         "features": {
             "gpu": settings.enable_gpu,
             "meme_evolution": settings.enable_meme_evolution,
-            "real_time": settings.enable_real_time_updates
+            "real_time": settings.enable_real_time_updates,
+            "spherical_universe": True
         }
     }
 

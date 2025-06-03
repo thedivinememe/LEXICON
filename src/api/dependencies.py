@@ -7,8 +7,17 @@ from fastapi.security import OAuth2PasswordBearer
 from typing import Dict, Optional, Any
 import jwt
 from datetime import datetime, timedelta
+import numpy as np
 
 from src.config import settings
+from src.core.spherical_universe import BlochSphereUniverse, SphericalCoordinate
+from src.core.null_gradient import NullGradientManager
+from src.core.centroid_builder import CentroidConceptBuilder
+from src.core.relative_type_system import RelativeTypeSystem
+from src.core.existence_types import ExistenceTypeRegistry
+from src.core.existence_primitives import ExistencePrimitiveEngine
+from src.neural.spherical_vectorizer import SphericalRelationshipVectorizer
+from src.services.sphere_visualization import SphericalUniverseVisualizer
 
 # OAuth2 scheme for token authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -88,3 +97,174 @@ async def get_admin_user(current_user: Dict = Depends(get_current_user)) -> Dict
         )
     
     return current_user
+
+# Spherical universe dependencies
+async def get_universe() -> BlochSphereUniverse:
+    """
+    Get the BlochSphereUniverse instance.
+    
+    Returns:
+        BlochSphereUniverse instance
+    """
+    app_state = await get_app_state()
+    
+    if not hasattr(app_state, "universe"):
+        # Create universe if it doesn't exist
+        app_state.universe = BlochSphereUniverse()
+    
+    return app_state.universe
+
+async def get_null_gradient_manager() -> NullGradientManager:
+    """
+    Get the NullGradientManager instance.
+    
+    Returns:
+        NullGradientManager instance
+    """
+    app_state = await get_app_state()
+    universe = await get_universe()
+    
+    if not hasattr(app_state, "null_gradient_manager"):
+        # Create null gradient manager if it doesn't exist
+        app_state.null_gradient_manager = NullGradientManager(universe)
+    
+    return app_state.null_gradient_manager
+
+async def get_centroid_builder() -> CentroidConceptBuilder:
+    """
+    Get the CentroidConceptBuilder instance.
+    
+    Returns:
+        CentroidConceptBuilder instance
+    """
+    app_state = await get_app_state()
+    universe = await get_universe()
+    
+    if not hasattr(app_state, "centroid_builder"):
+        # Create centroid builder if it doesn't exist
+        app_state.centroid_builder = CentroidConceptBuilder(universe)
+    
+    return app_state.centroid_builder
+
+async def get_relative_type_system() -> RelativeTypeSystem:
+    """
+    Get the RelativeTypeSystem instance.
+    
+    Returns:
+        RelativeTypeSystem instance
+    """
+    app_state = await get_app_state()
+    universe = await get_universe()
+    
+    if not hasattr(app_state, "relative_type_system"):
+        # Create relative type system if it doesn't exist
+        app_state.relative_type_system = RelativeTypeSystem(universe)
+    
+    return app_state.relative_type_system
+
+async def get_existence_type_system() -> ExistenceTypeRegistry:
+    """
+    Get the ExistenceTypeRegistry instance.
+    
+    Returns:
+        ExistenceTypeRegistry instance
+    """
+    app_state = await get_app_state()
+    
+    if not hasattr(app_state, "existence_type_system"):
+        # Create existence type system if it doesn't exist
+        app_state.existence_type_system = ExistenceTypeRegistry()
+    
+    return app_state.existence_type_system
+
+async def get_existence_primitive_engine() -> ExistencePrimitiveEngine:
+    """
+    Get the ExistencePrimitiveEngine instance.
+    
+    Returns:
+        ExistencePrimitiveEngine instance
+    """
+    app_state = await get_app_state()
+    
+    if not hasattr(app_state, "existence_primitive_engine"):
+        # Create existence primitive engine if it doesn't exist
+        app_state.existence_primitive_engine = ExistencePrimitiveEngine()
+    
+    return app_state.existence_primitive_engine
+
+async def get_spherical_vectorizer() -> SphericalRelationshipVectorizer:
+    """
+    Get the SphericalRelationshipVectorizer instance.
+    
+    Returns:
+        SphericalRelationshipVectorizer instance
+    """
+    app_state = await get_app_state()
+    universe = await get_universe()
+    null_gradient = await get_null_gradient()
+    
+    if not hasattr(app_state, "spherical_vectorizer"):
+        # Create spherical vectorizer if it doesn't exist
+        app_state.spherical_vectorizer = SphericalRelationshipVectorizer(universe, null_gradient)
+    
+    return app_state.spherical_vectorizer
+
+async def get_null_gradient() -> NullGradientManager:
+    """
+    Get the NullGradientManager instance.
+    
+    Returns:
+        NullGradientManager instance
+    """
+    app_state = await get_app_state()
+    
+    if not hasattr(app_state, "null_gradient"):
+        # Create null gradient if it doesn't exist
+        app_state.null_gradient = NullGradientManager()
+    
+    return app_state.null_gradient
+
+async def get_type_system() -> RelativeTypeSystem:
+    """
+    Get the RelativeTypeSystem instance.
+    
+    Returns:
+        RelativeTypeSystem instance
+    """
+    app_state = await get_app_state()
+    universe = await get_universe()
+    null_gradient = await get_null_gradient()
+    
+    if not hasattr(app_state, "type_system"):
+        # Create type system if it doesn't exist
+        app_state.type_system = RelativeTypeSystem(universe, null_gradient)
+    
+    return app_state.type_system
+
+async def get_visualizer() -> SphericalUniverseVisualizer:
+    """
+    Get the SphericalUniverseVisualizer instance.
+    
+    Returns:
+        SphericalUniverseVisualizer instance
+    """
+    app_state = await get_app_state()
+    universe = await get_universe()
+    null_gradient = await get_null_gradient()
+    vectorizer = await get_spherical_vectorizer()
+    type_system = await get_type_system()
+    
+    if not hasattr(app_state, "visualizer"):
+        # Create visualizer if it doesn't exist
+        app_state.visualizer = SphericalUniverseVisualizer(universe, null_gradient, vectorizer, type_system)
+    
+    return app_state.visualizer
+
+async def get_sphere_visualizer() -> SphericalUniverseVisualizer:
+    """
+    Get the SphericalUniverseVisualizer instance.
+    
+    Returns:
+        SphericalUniverseVisualizer instance
+    """
+    return await get_visualizer()
