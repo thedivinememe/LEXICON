@@ -15,33 +15,88 @@ The LEXICON spherical universal set is a topological representation of concepts 
 
 To visualize the Bloch sphere with core concepts:
 
-### Windows
+### Command Line Options
+
+```bash
+# Generate all visualizations and open in browser
+python scripts/run_spherical_visualization.py --all --open
+
+# Visualize a specific concept
+python scripts/run_spherical_visualization.py --concept concept --open
+
+# Visualize interpolation between two concepts
+python scripts/run_spherical_visualization.py --interpolate abstraction,concrete --open
+
+# Visualize null gradient
+python scripts/run_spherical_visualization.py --null-gradient --open
+```
+
+### Using Batch Scripts
+
+#### Windows
 ```
 scripts\run_spherical_visualization.bat
 ```
 
-### Unix/Mac
+#### Unix/Mac
 ```
 chmod +x scripts/run_spherical_visualization.sh
 ./scripts/run_spherical_visualization.sh
 ```
 
 This will:
-1. Generate a 3D visualization of the Bloch sphere
-2. Open it in your default web browser
-3. Also generate a static PNG image
+1. Generate multiple 3D visualizations of the Bloch sphere
+2. Open them in your default web browser
+3. Also generate static PNG images for 2D projections
 
-## Understanding the Visualization
+## Understanding the Visualizations
 
-The visualization shows:
+The system generates several interactive 3D visualizations:
+
+### 1. Sphere Visualization
+Shows all concepts positioned in the spherical universe.
 - **Colored Points**: Core concepts positioned on the sphere
 - **Black Center Point**: The null center (pure undefined)
 - **Connecting Lines**: Relationships between concepts
 - **Wireframe Sphere**: The universal set boundary
 
+### 2. Null Gradient Visualization
+Displays the null field intensity gradient from the center to the surface.
+- **Color Gradient**: Represents null intensity (darker = higher null presence)
+- **Sphere Surface**: Shows how the null field diminishes at the boundary
+
+### 3. Type Hierarchy Visualization
+Displays the relative type hierarchy for a specific concept.
+- **Vertical Arrangement**: Shows type hierarchy levels
+- **Connecting Lines**: Shows subtype/supertype relationships
+- **Color Coding**: Differentiates between types at different levels
+
+### 4. Relationship Visualization
+Shows AND/OR/NOT relationships between a concept and related concepts.
+- **Red Node**: The central concept being visualized
+- **Blue Nodes**: OR relationships (45°-135° angular distance)
+- **Green Nodes**: AND relationships (<45° angular distance)
+- **Purple Nodes**: NOT relationships (>135° angular distance)
+
+### 5. Concept Interpolation Visualization
+Shows the interpolation path between two concepts.
+- **Path Points**: Intermediate concepts at different interpolation weights
+- **Labels**: Shows interpolation weights (0.0 to 1.0)
+
+### 6. Concept Cluster Visualization
+Shows clusters of related concepts based on semantic similarity.
+- **Color Clusters**: Different colors represent different concept clusters
+- **Spatial Proximity**: Similar concepts are positioned closer together
+
+### 7. Nearest Concepts Visualization
+Displays the nearest concepts to a given concept based on angular distance.
+- **Central Node**: The concept being analyzed
+- **Surrounding Nodes**: The k-nearest concepts
+- **Distance Labels**: Shows angular distance in degrees
+
 Concepts are positioned based on:
 - **Radius (r)**: Definition level (0 = undefined, 1 = fully defined)
-- **Angular Position**: Relationship to other concepts
+- **Angular Position (θ, φ)**: Relationship to other concepts
 - **Growth Pattern**: How the concept evolved from the center
 
 ## Adding New Concepts

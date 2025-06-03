@@ -99,6 +99,19 @@ A monolithic Python application combining all LEXICON functionality in a single,
 To visualize the Bloch sphere with core concepts:
 
 ```bash
+# Generate all visualizations and open in browser
+python scripts/run_spherical_visualization.py --all --open
+
+# Visualize a specific concept
+python scripts/run_spherical_visualization.py --concept concept --open
+
+# Visualize interpolation between two concepts
+python scripts/run_spherical_visualization.py --interpolate abstraction,concrete --open
+
+# Visualize null gradient
+python scripts/run_spherical_visualization.py --null-gradient --open
+
+# Or use the batch scripts
 # On Windows
 scripts\run_spherical_visualization.bat
 
@@ -106,6 +119,15 @@ scripts\run_spherical_visualization.bat
 chmod +x scripts/run_spherical_visualization.sh
 ./scripts/run_spherical_visualization.sh
 ```
+
+The visualization system generates several interactive 3D visualizations:
+- **Sphere Visualization**: Shows all concepts positioned in the spherical universe
+- **Null Gradient Visualization**: Displays the null field intensity gradient
+- **Relationship Visualization**: Shows AND/OR/NOT relationships between concepts
+- **Type Hierarchy Visualization**: Displays the relative type hierarchy for a concept
+- **Concept Cluster Visualization**: Shows clusters of related concepts
+- **Nearest Concepts Visualization**: Displays the nearest concepts to a given concept
+- **Concept Interpolation Visualization**: Shows the interpolation path between two concepts
 
 For more details on the spherical system, see [SPHERICAL_SYSTEM.md](docs/SPHERICAL_SYSTEM.md).
 
