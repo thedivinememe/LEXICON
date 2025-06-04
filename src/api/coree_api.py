@@ -115,6 +115,33 @@ async def get_visualization(
         logger.error(f"Error getting visualization data: {e}")
         raise HTTPException(status_code=500, detail=f"Error getting visualization data: {str(e)}")
 
+@router.post("/concept")
+async def add_concept(
+    concept_data: Dict[str, Any],
+    coree: COREEInterface = Depends(get_coree_interface)
+) -> Dict[str, Any]:
+    """
+    Add a new concept to COREE's vocabulary.
+    
+    Args:
+        concept_data: The concept definition data
+        coree: The COREE interface
+    
+    Returns:
+        Dict: Result of adding the concept
+    """
+    if not concept_data.get("name"):
+        raise HTTPException(status_code=400, detail="Concept name is required")
+    
+    try:
+        result = await coree.add_concept(concept_data)
+        if "error" in result:
+            raise HTTPException(status_code=400, detail=result["error"])
+        return result
+    except Exception as e:
+        logger.error(f"Error adding concept: {e}")
+        raise HTTPException(status_code=500, detail=f"Error adding concept: {str(e)}")
+
 @router.get("/concept/{concept}")
 async def get_concept_details(
     concept: str,

@@ -1,0 +1,50 @@
+# Directories to exclude from Heroku deployment
+visualizations/
+models/
+data/
+tests/
+docs/
+docker/
+frontend/
+.github/
+.git/
+.vscode/
+__pycache__/
+*.egg-info/
+
+# Large files
+*.pkl
+*.h5
+*.model
+*.bin
+*.vec
+*.npy
+*.npz
+*.zip
+*.tar.gz
+*.csv
+*.tsv
+*.json
+*.html
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.pdf
+
+# Development files
+*.ipynb
+*.pyc
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Node.js files
+node_modules/

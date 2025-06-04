@@ -1,0 +1,59 @@
+name: Deploy Frontend to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-frontend.yml'
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Set API URL
+        id: set-api-url
+        run: |
+          # Use the provided API_URL secret or construct it from the Heroku app name
+          if [ -n "${{ secrets.API_URL }}" ]; then
+            echo "Using provided API_URL from secrets"
+            API_URL="${{ secrets.API_URL }}"
+          elif [ -n "${{ secrets.HEROKU_APP_NAME }}" ]; then
+            echo "Constructing API_URL from Heroku app name"
+            API_URL="https://${{ secrets.HEROKU_APP_NAME }}.herokuapp.com/api/v1"
+          else
+            echo "No API_URL or HEROKU_APP_NAME provided, using default"
+            API_URL="http://localhost:8000/api/v1"
+          fi
+          echo "API_URL=$API_URL" >> $GITHUB_ENV
+          echo "API URL set to: $API_URL"
+
+      - name: Build
+        run: |
+          cd frontend
+          npm run build
+        env:
+          REACT_APP_API_URL: ${{ env.API_URL }}
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: frontend/build
+          branch: gh-pages
+          clean: true

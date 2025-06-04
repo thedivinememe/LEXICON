@@ -2,17 +2,35 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Optional
 import torch
+import os
+import re
 
 class Settings(BaseSettings):
     # Application
     app_name: str = "LEXICON"
-    debug: bool = False
-    secret_key: str = "development_secret_key"
-    jwt_algorithm: str = "HS256"
+    debug: bool = Field(False, env="DEBUG")
+    secret_key: str = Field("development_secret_key", env="SECRET_KEY")
+    jwt_algorithm: str = Field("HS256", env="JWT_ALGORITHM")
+    environment: str = Field("development", env="ENVIRONMENT")
     
     # Database
     database_url: str = Field(..., env="DATABASE_URL")
     redis_url: str = Field("redis://localhost:6379", env="REDIS_URL")
+    
+    @property
+    def postgres_database_url(self) -> str:
+        """
+        Convert Heroku's DATABASE_URL to a format compatible with asyncpg.
+        Heroku provides a postgres:// URL, but asyncpg requires postgresql://
+        """
+        if self.database_url.startswith("postgres://"):
+            return self.database_url.replace("postgres://", "postgresql://", 1)
+        return self.database_url
+    
+    @property
+    def is_production(self) -> bool:
+        """Check if the application is running in production mode"""
+        return self.environment.lower() == "production" or os.environ.get("HEROKU_APP_NAME") is not None
     
     # Neural Network
     model_dim: int = 768  # BERT compatible

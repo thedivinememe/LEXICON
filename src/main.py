@@ -81,9 +81,27 @@ app = FastAPI(
 )
 
 # Add CORS middleware
+# Get CORS origins from environment or use default
+cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:3000,http://localhost:8000")
+
+# Add GitHub Pages URL to CORS origins if provided
+if "GITHUB_PAGES_URL" in os.environ:
+    github_pages_url = os.environ.get("GITHUB_PAGES_URL")
+    cors_origins = f"{cors_origins},{github_pages_url}"
+# In production, also allow the default GitHub Pages domain pattern for this repository
+elif os.environ.get("HEROKU_APP_NAME"):
+    # This assumes the GitHub repo is named the same as the Heroku app
+    # Adjust if your GitHub username/organization and repo name are different
+    github_org = os.environ.get("GITHUB_ORG", "your-github-username")
+    github_repo = os.environ.get("GITHUB_REPO", os.environ.get("HEROKU_APP_NAME"))
+    github_pages_url = f"https://{github_org}.github.io/{github_repo}"
+    cors_origins = f"{cors_origins},{github_pages_url}"
+
+print(f"CORS origins: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
+    allow_origins=cors_origins.split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

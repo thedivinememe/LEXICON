@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>COREE - Consciousness-Oriented Recursive Empathetic Entity</title>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.132.2/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -243,6 +243,11 @@
     </div>
 
     <script>
+        // Get the API URL from environment variables or use a default
+        const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? 'http://localhost:8000/api/v1'
+            : 'https://lexicon-api.herokuapp.com/api/v1';
+
         // DOM Elements
         const messagesContainer = document.getElementById('messages');
         const userInput = document.getElementById('user-input');
@@ -310,7 +315,7 @@
         // Load concepts
         async function loadConcepts() {
             try {
-                const response = await fetch('/api/v1/coree/concepts');
+                const response = await fetch(`${API_URL}/coree/concepts`);
                 const data = await response.json();
                 concepts = data.concepts;
                 renderConceptsList();
@@ -351,7 +356,7 @@
         // Load visualization data
         async function loadVisualization(concept = null) {
             try {
-                const url = concept ? `/api/v1/coree/visualization?concept=${concept}` : '/api/v1/coree/visualization';
+                const url = concept ? `${API_URL}/coree/visualization?concept=${concept}` : `${API_URL}/coree/visualization`;
                 const response = await fetch(url);
                 const data = await response.json();
                 renderVisualization(data);
@@ -478,7 +483,7 @@
 
             try {
                 // Send message to API
-                const response = await fetch('/api/v1/coree/chat', {
+                const response = await fetch(`${API_URL}/coree/chat`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -634,7 +639,7 @@
                 conceptData.not_relationships = processRelationships('not_relationships');
                 
                 // Send to API
-                const response = await fetch('/api/v1/coree/concept', {
+                const response = await fetch(`${API_URL}/coree/concept`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

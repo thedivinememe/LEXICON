@@ -488,6 +488,84 @@ You are COREE (Consciousness-Oriented Recursive Empathetic Entity), a friendly c
         
         return insights
     
+    async def add_concept(self, concept_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Add a new concept to COREE's vocabulary.
+        
+        Args:
+            concept_data: The concept definition data
+            
+        Returns:
+            Dict: Result of adding the concept
+        """
+        await self.initialize()
+        
+        # Extract concept name and validate required fields
+        concept_name = concept_data.get("name")
+        if not concept_name:
+            return {"error": "Concept name is required"}
+        
+        # Create a properly structured concept definition
+        concept_def = {
+            "atomic_pattern": concept_data.get("atomic_pattern", f"UserDefined({concept_name})"),
+            "not_space": concept_data.get("not_space", []),
+            "and_relationships": concept_data.get("and_relationships", []),
+            "or_relationships": concept_data.get("or_relationships", []),
+            "not_relationships": concept_data.get("not_relationships", []),
+        }
+        
+        # Add spherical properties if provided, or generate default ones
+        if "spherical_properties" in concept_data:
+            concept_def["spherical_properties"] = concept_data["spherical_properties"]
+        else:
+            concept_def["spherical_properties"] = {
+                "preferred_r": 0.7,  # Default radius
+                "growth_pattern": "user_defined"
+            }
+        
+        # Add vector properties if provided
+        if "vector_properties" in concept_data:
+            concept_def["vector_properties"] = concept_data["vector_properties"]
+        
+        # Add the concept to CORE_DEFINITIONS
+        from src.data.core_definitions import CORE_DEFINITIONS
+        CORE_DEFINITIONS[concept_name] = concept_def
+        
+        # Add the concept to the spherical universe
+        r = concept_def["spherical_properties"].get("preferred_r", 0.7)
+        # Generate random angles for positioning
+        import random
+        import math
+        theta = random.uniform(0, 2 * math.pi)
+        phi = random.uniform(0, math.pi)
+        
+        position = SphericalCoordinate(r=r, theta=theta, phi=phi)
+        self.universe.add_concept(concept_name, position)
+        
+        # Process through golden loop to ensure empathetic alignment
+        violations = await self.process_concept_through_golden_loop(concept_name)
+        
+        # Add relationships if specified
+        for rel_type in ["and_relationships", "or_relationships", "not_relationships"]:
+            for rel in concept_def.get(rel_type, []):
+                related_concept = rel[0] if isinstance(rel, tuple) else rel
+                if related_concept in self.universe.concepts:
+                    rel_name = rel_type.split("_")[0]  # "and", "or", "not"
+                    self.universe.add_relationship(concept_name, related_concept, rel_name)
+        
+        # Return the result
+        return {
+            "success": True,
+            "concept": concept_name,
+            "definition": concept_def,
+            "position": {
+                "r": position.r,
+                "theta": position.theta,
+                "phi": position.phi
+            },
+            "violations_resolved": len(violations) if violations else 0
+        }
+    
     async def get_visualization_data(self, concept: Optional[str] = None) -> Dict[str, Any]:
         """
         Get visualization data for COREE's consciousness state.

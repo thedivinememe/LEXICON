@@ -25,8 +25,12 @@ class Database:
         """Create connection pool"""
         async with self._connection_lock:
             if self.pool is None:
+                # Use the postgres_database_url property from settings if available
+                from src.config import settings
+                connection_str = settings.postgres_database_url if hasattr(settings, 'postgres_database_url') else self.connection_string
+                
                 self.pool = await asyncpg.create_pool(
-                    dsn=self.connection_string,
+                    dsn=connection_str,
                     min_size=5,
                     max_size=20,
                     command_timeout=60,

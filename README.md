@@ -342,6 +342,128 @@ docker-compose up -d
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
+## Security
+
+For information on managing API keys and other sensitive credentials, see [SECURITY.md](docs/SECURITY.md).
+
+## Deployment Guide
+
+### Deploying to Heroku and GitHub Pages
+
+This project is set up for deployment with:
+- Backend: Heroku
+- Frontend: GitHub Pages
+
+For detailed deployment instructions, see [DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+#### Quick Start
+
+1. Set up GitHub repository secrets for automated deployment
+2. Push to the `main` branch to trigger deployment
+3. Backend will be deployed to Heroku
+4. Frontend will be deployed to GitHub Pages
+
+#### Deployment Scripts
+
+The project includes deployment scripts to simplify the deployment process:
+
+- **Backend Deployment**:
+  ```bash
+  # Windows
+  scripts\deploy_to_heroku.bat
+  
+  # Linux/macOS
+  chmod +x scripts/deploy_to_heroku.sh
+  ./scripts/deploy_to_heroku.sh
+  ```
+
+- **Frontend Deployment**:
+  ```bash
+  # Windows
+  scripts\deploy_to_github_pages.bat
+  
+  # Linux/macOS
+  chmod +x scripts/deploy_to_github_pages.sh
+  ./scripts/deploy_to_github_pages.sh
+  ```
+
+These scripts handle the entire deployment process, including:
+- Creating a temporary directory with only necessary files (for backend)
+- Setting up the correct API URL for the frontend
+- Building and deploying the application
+
+#### Deployment Process
+
+The deployment process is automated using GitHub Actions:
+
+1. **Backend Deployment (Heroku)**:
+   - Triggered when changes are pushed to the `main` branch (excluding frontend files)
+   - Runs tests before deployment
+   - Deploys the application to Heroku
+   - Runs database migrations after deployment
+   - Sets necessary environment variables
+
+2. **Frontend Deployment (GitHub Pages)**:
+   - Triggered when changes are pushed to the `main` branch in the `frontend` directory
+   - Builds the React application with the correct API URL
+   - Deploys the built files to the `gh-pages` branch
+
+#### Manual Deployment
+
+To manually deploy:
+
+1. **Backend (Heroku)**:
+   ```bash
+   # Login to Heroku
+   heroku login
+
+   # Create a new Heroku app if you don't have one
+   heroku create your-app-name
+
+   # Add PostgreSQL addon
+   heroku addons:create heroku-postgresql:hobby-dev
+
+   # Add Redis addon (optional)
+   heroku addons:create heroku-redis:hobby-dev
+
+   # Set environment variables
+   heroku config:set ENVIRONMENT=production
+   heroku config:set GITHUB_ORG=your-github-username
+   heroku config:set GITHUB_REPO=your-repo-name
+
+   # Deploy
+   git push heroku main
+
+   # Run database migrations
+   heroku run python -m scripts.init_db
+   ```
+
+2. **Frontend (GitHub Pages)**:
+   ```bash
+   # Set the API URL in .env.local
+   echo "REACT_APP_API_URL=https://your-heroku-app.herokuapp.com/api/v1" > frontend/.env.local
+
+   # Build the frontend
+   cd frontend
+   npm install
+   npm run build
+
+   # Deploy to GitHub Pages
+   npx gh-pages -d build
+   ```
+
+### Environment Configuration
+
+Make sure to set the following environment variables in your Heroku application:
+
+- `DATABASE_URL`: Set automatically by Heroku PostgreSQL addon
+- `REDIS_URL`: Set automatically by Heroku Redis addon (if used)
+- `SECRET_KEY`: A secure random string for JWT signing
+- `ENVIRONMENT`: Set to "production"
+- `GITHUB_ORG`: Your GitHub username or organization
+- `GITHUB_REPO`: Your GitHub repository name
+- `GITHUB_PAGES_URL`: The URL to your GitHub Pages site
+
 ## Acknowledgments
 
 - BERT model from Hugging Face Transformers
