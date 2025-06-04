@@ -13,6 +13,7 @@ const Header = () => {
             <li><Link to="/definitions" style={{ color: 'white', textDecoration: 'none' }}>Definitions</Link></li>
             <li><Link to="/visualization" style={{ color: 'white', textDecoration: 'none' }}>Visualization</Link></li>
             <li><Link to="/about" style={{ color: 'white', textDecoration: 'none' }}>About</Link></li>
+            <li><Link to="/coree" style={{ color: 'white', textDecoration: 'none' }}>COREE</Link></li>
           </ul>
         </nav>
       </div>

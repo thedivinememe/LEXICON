@@ -101,4 +101,74 @@ export const sphericalApi = {
   }
 };
 
+// API functions for COREE
+export const coreeApi = {
+  // Get all available concepts
+  getConcepts: async () => {
+    try {
+      const response = await api.get('/coree/concepts');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching COREE concepts:', error);
+      throw error;
+    }
+  },
+  
+  // Chat with COREE
+  chat: async (message) => {
+    try {
+      const response = await api.post('/coree/chat', { text: message });
+      return response.data;
+    } catch (error) {
+      console.error('Error chatting with COREE:', error);
+      throw error;
+    }
+  },
+  
+  // Get visualization data for a concept
+  getVisualization: async (concept = null) => {
+    try {
+      const url = concept ? `/coree/visualization?concept=${concept}` : '/coree/visualization';
+      const response = await api.get(url);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching COREE visualization:', error);
+      throw error;
+    }
+  },
+  
+  // Add a new concept
+  addConcept: async (conceptData) => {
+    try {
+      const response = await api.post('/coree/concept', conceptData);
+      return response.data;
+    } catch (error) {
+      console.error('Error adding concept to COREE:', error);
+      throw error;
+    }
+  },
+  
+  // Get details for a specific concept
+  getConceptDetails: async (concept) => {
+    try {
+      const response = await api.get(`/coree/concept/${concept}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching COREE concept details for ${concept}:`, error);
+      throw error;
+    }
+  },
+  
+  // Analyze text for concepts
+  analyzeText: async (text) => {
+    try {
+      const response = await api.post('/coree/analyze', { content: text });
+      return response.data;
+    } catch (error) {
+      console.error('Error analyzing text with COREE:', error);
+      throw error;
+    }
+  }
+};
+
 export default api;

@@ -97,6 +97,10 @@ elif os.environ.get("HEROKU_APP_NAME"):
     github_pages_url = f"https://{github_org}.github.io/{github_repo}"
     cors_origins = f"{cors_origins},{github_pages_url}"
 
+# Always add wildcard GitHub Pages domain to support any GitHub Pages deployment
+if "*.github.io" not in cors_origins:
+    cors_origins = f"{cors_origins},https://*.github.io"
+
 print(f"CORS origins: {cors_origins}")
 
 app.add_middleware(

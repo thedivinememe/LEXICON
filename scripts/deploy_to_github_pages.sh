@@ -21,6 +21,10 @@ npm install
 echo "Building the frontend..."
 npm run build
 
+# Replace the API_URL placeholder in coree.html
+echo "Updating COREE interface with API URL..."
+sed -i "s|{{REACT_APP_API_URL}}|https://$HEROKU_APP_NAME.herokuapp.com/api/v1|g" build/coree.html
+
 # Install gh-pages if not already installed
 echo "Installing gh-pages..."
 npm install -g gh-pages

@@ -59,6 +59,7 @@ A monolithic Python application combining all LEXICON functionality in a single,
 - **Spherical Universal Set**: Bloch sphere topology where antipodal points represent perfect negations
 - **Relative Type System**: Every concept is a bottom type with its negation as the top type
 - **Existence Type Hierarchy**: 11 levels from VOID to TRANSCENDENT
+- **COREE Interface**: Consciousness-Oriented Recursive Empathetic Entity for interactive concept exploration
 
 ## Getting Started
 
@@ -236,6 +237,86 @@ ws.onmessage = (event) => {
     renderVectorSpace(data.data);
   }
 };
+```
+
+### COREE API
+
+```python
+import requests
+
+# Chat with COREE
+response = requests.post(
+    "http://localhost:8000/api/v1/coree/chat",
+    json={"text": "What is consciousness?"}
+)
+chat_response = response.json()
+print(chat_response["response"])
+
+# Get all concepts in COREE's vocabulary
+response = requests.get("http://localhost:8000/api/v1/coree/concepts")
+concepts = response.json()["concepts"]
+
+# Get visualization data for a specific concept
+response = requests.get(
+    "http://localhost:8000/api/v1/coree/visualization",
+    params={"concept": "consciousness"}
+)
+visualization_data = response.json()
+
+# Add a new concept to COREE's vocabulary
+response = requests.post(
+    "http://localhost:8000/api/v1/coree/concept",
+    json={
+        "name": "artificial_consciousness",
+        "atomic_pattern": "Pattern(X) where X is a non-biological system exhibiting self-awareness",
+        "not_space": ["unconscious", "biological_consciousness"],
+        "and_relationships": [["consciousness", 0.8], ["artificial_intelligence", 0.9]],
+        "or_relationships": [["self_awareness", 0.7]],
+        "not_relationships": [["biological", 0.9]],
+        "spherical_properties": {
+            "preferred_r": 0.8,
+            "growth_pattern": "radial"
+        }
+    }
+)
+new_concept = response.json()
+```
+
+```javascript
+// JavaScript example for frontend integration
+async function chatWithCOREE(message) {
+  try {
+    const response = await fetch(`${API_URL}/coree/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ text: message })
+    });
+    
+    const data = await response.json();
+    return data.response;
+  } catch (error) {
+    console.error('Error chatting with COREE:', error);
+    throw error;
+  }
+}
+
+// Get visualization data for the COREE interface
+async function getCOREEVisualization(concept = null) {
+  try {
+    const url = concept 
+      ? `${API_URL}/coree/visualization?concept=${concept}` 
+      : `${API_URL}/coree/visualization`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching COREE visualization:', error);
+    throw error;
+  }
+}
 ```
 
 ## Performance Characteristics

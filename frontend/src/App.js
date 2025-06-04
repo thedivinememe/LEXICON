@@ -3,6 +3,7 @@ import './App.css';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 
 import AboutPage from './pages/AboutPage';
+import COREEPage from './pages/COREEPage';
 import DefinitionsPage from './pages/DefinitionsPage';
 import Footer from './components/Footer';
 import Header from './components/Header';
@@ -31,6 +32,7 @@ function App() {
             <Route path="/definitions" element={<DefinitionsPage />} />
             <Route path="/visualization" element={<VisualizationPage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/coree" element={<COREEPage />} />
           </Routes>
         </main>
         <Footer />

@@ -5,8 +5,8 @@ on:
     branches:
       - main
     paths:
-      - 'frontend/**'
-      - '.github/workflows/deploy-frontend.yml'
+      - "frontend/**"
+      - ".github/workflows/deploy-frontend.yml"
 
 jobs:
   build-and-deploy:
@@ -18,8 +18,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'npm'
+          node-version: "18"
+          cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install dependencies
@@ -48,6 +48,8 @@ jobs:
         run: |
           cd frontend
           npm run build
+          # Replace the API_URL placeholder in coree.html with the actual API URL
+          sed -i "s|{{REACT_APP_API_URL}}|$API_URL|g" build/coree.html
         env:
           REACT_APP_API_URL: ${{ env.API_URL }}
 

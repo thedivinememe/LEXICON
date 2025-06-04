@@ -181,7 +181,10 @@ The frontend is automatically deployed to GitHub Pages when changes are pushed t
 3. Installs dependencies
 4. Sets the API URL environment variable
 5. Builds the React application
-6. Deploys to the `gh-pages` branch
+6. Updates the COREE interface with the correct API URL
+7. Deploys to the `gh-pages` branch
+
+The COREE interface (frontend/public/coree.html) is a standalone HTML file that communicates with the backend API. During deployment, the placeholder `{{REACT_APP_API_URL}}` in this file is replaced with the actual API URL to ensure it can connect to the backend.
 
 ### Using the Deployment Scripts
 

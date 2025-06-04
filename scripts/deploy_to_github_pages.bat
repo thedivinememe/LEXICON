@@ -20,6 +20,10 @@ REM Build the frontend
 echo Building the frontend...
 call npm run build
 
+REM Replace the API_URL placeholder in coree.html
+echo Updating COREE interface with API URL...
+powershell -Command "(Get-Content build\coree.html) -replace '{{REACT_APP_API_URL}}', 'https://%HEROKU_APP_NAME%.herokuapp.com/api/v1' | Set-Content build\coree.html"
+
 REM Install gh-pages if not already installed
 echo Installing gh-pages...
 call npm install -g gh-pages
