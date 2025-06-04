@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     enable_meme_evolution: bool = True
     enable_real_time_updates: bool = True
     
+    # COREE
+    openai_api_key: Optional[str] = Field(None, env="OPENAI_API_KEY")
+    openai_model: str = Field("gpt-4-turbo", env="OPENAI_MODEL")
+    
     class Config:
         env_file = ".env"
 

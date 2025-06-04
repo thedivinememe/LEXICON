@@ -4,6 +4,10 @@ Core Definitions for LEXICON.
 This module defines the core concepts used in the LEXICON system.
 """
 
+from src.data.narrative_concepts import NARRATIVE_CONCEPTS
+from src.data.consciousness_bootstrap_definitions import CONSCIOUSNESS_BOOTSTRAP_DEFINITIONS
+
+# Original Core Definitions
 CORE_DEFINITIONS = {
     # Week 1: Existence Primitives
     "existence": {
@@ -309,3 +313,7 @@ CORE_DEFINITIONS = {
         }
     }
 }
+
+# Update CORE_DEFINITIONS with narrative concepts and consciousness bootstrap definitions
+CORE_DEFINITIONS.update(NARRATIVE_CONCEPTS)
+CORE_DEFINITIONS.update(CONSCIOUSNESS_BOOTSTRAP_DEFINITIONS)

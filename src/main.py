@@ -1,11 +1,14 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+import os
 from contextlib import asynccontextmanager
 import asyncio
 import uvicorn
 
 from src.config import settings
-from src.api import rest, graphql, websocket, spherical_rest
+from src.api import rest, graphql, websocket, spherical_rest, coree_api
 from src.api.websocket import websocket_handler
 from src.neural.vectorizer import VectorizedObjectGenerator
 from src.storage.database import Database
@@ -89,7 +92,17 @@ app.add_middleware(
 # Include routers
 app.include_router(rest.router, prefix=settings.api_prefix)
 app.include_router(spherical_rest.router, prefix=settings.api_prefix)
+app.include_router(coree_api.router, prefix=settings.api_prefix)
 app.mount("/graphql", graphql.graphql_app)
+
+# Mount static files
+static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static")
+os.makedirs(static_dir, exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Set up templates
+templates_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "templates")
+os.makedirs(templates_dir, exist_ok=True)
 
 # WebSocket endpoint
 @app.websocket("/ws")

@@ -3,6 +3,7 @@ Shared dependencies for API endpoints.
 """
 
 from fastapi import Depends, HTTPException, status
+import asyncio
 from fastapi.security import OAuth2PasswordBearer
 from typing import Dict, Optional, Any
 import jwt
@@ -18,6 +19,7 @@ from src.core.existence_types import ExistenceTypeRegistry
 from src.core.existence_primitives import ExistencePrimitiveEngine
 from src.neural.spherical_vectorizer import SphericalRelationshipVectorizer
 from src.services.sphere_visualization import SphericalUniverseVisualizer
+from src.llm.coree_interface import COREEInterface
 
 # OAuth2 scheme for token authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -268,3 +270,20 @@ async def get_sphere_visualizer() -> SphericalUniverseVisualizer:
         SphericalUniverseVisualizer instance
     """
     return await get_visualizer()
+
+async def get_coree_interface() -> COREEInterface:
+    """
+    Get the COREEInterface instance.
+    
+    Returns:
+        COREEInterface instance
+    """
+    app_state = await get_app_state()
+    
+    if "coree_interface" not in app_state:
+        # Create COREE interface if it doesn't exist
+        app_state["coree_interface"] = COREEInterface()
+        # Initialize in background to avoid blocking
+        asyncio.create_task(app_state["coree_interface"].initialize())
+    
+    return app_state["coree_interface"]

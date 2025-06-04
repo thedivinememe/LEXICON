@@ -16,7 +16,7 @@ from src.core.null_gradient import NullGradientManager
 from src.core.relative_type_system import RelativeTypeSystem, RelativeTypeHierarchy
 from src.neural.spherical_vectorizer import SphericalRelationshipVectorizer
 from src.services.sphere_visualization import SphericalUniverseVisualizer
-from src.api.dependencies import get_universe, get_null_gradient, get_vectorizer, get_type_system, get_sphere_visualizer
+from src.api.dependencies import get_universe, get_null_gradient, get_spherical_vectorizer, get_type_system, get_sphere_visualizer
 
 logger = logging.getLogger(__name__)
 
@@ -142,7 +142,7 @@ async def create_concept(
 async def vectorize_concept(
     concept_name: str = Body(..., description="Concept name"),
     constraints: Optional[ConceptConstraintsModel] = Body(None, description="Vectorization constraints"),
-    vectorizer: SphericalRelationshipVectorizer = Depends(get_vectorizer)
+    vectorizer: SphericalRelationshipVectorizer = Depends(get_spherical_vectorizer)
 ) -> ConceptModel:
     """Vectorize a concept."""
     logger.info(f"Vectorizing concept '{concept_name}'")

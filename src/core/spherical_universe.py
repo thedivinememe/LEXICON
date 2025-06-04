@@ -118,6 +118,25 @@ class BlochSphereUniverse:
     def get_concept_position(self, name: str) -> Optional[SphericalCoordinate]:
         """Get the position of a concept"""
         return self.concepts.get(name)
+        
+    def update_concept_position(self, name: str, position: SphericalCoordinate) -> bool:
+        """
+        Update the position of an existing concept.
+        
+        Args:
+            name: Concept name
+            position: New spherical position
+            
+        Returns:
+            bool: Whether the concept position was updated
+        """
+        # Check if concept exists
+        if name not in self.concepts:
+            return False
+        
+        # Update position
+        self.concepts[name] = position
+        return True
     
     def get_antipodal_point(self, position: SphericalCoordinate) -> SphericalCoordinate:
         """
